@@ -67,3 +67,21 @@ def register_device(
         "firmware_version": new_device.firmware_version,
         "status": new_device.status
     }
+
+@router.get("/")
+def get_devices(db: Session = Depends(get_db)):
+    devices = db.query(Device).all()
+
+    return [
+        {
+            "device_id": device.id,
+            "device_name": device.device_name,
+            "serial_number": device.serial_number,
+            "model": device.model,
+            "firmware_version": device.firmware_version,
+            "assigned_firmware": device.assigned_firmware,
+            "status": device.status,
+            "registered_at": device.registered_at
+        }
+        for device in devices
+    ]
