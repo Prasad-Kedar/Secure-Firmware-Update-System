@@ -1,0 +1,10 @@
+venv/
+__pycache__/
+*.pyc
+firmware.db
+
+# RSA Keys
+keys/private_key.pem
+
+# Fernet Key
+keys/aes.key
