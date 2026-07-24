@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from pydantic import BaseModel
 
 from database.db import SessionLocal
-from models.models import Device
+from models.models import Device, Firmware
 
 router = APIRouter(
     prefix="/devices",
@@ -15,6 +15,10 @@ class DeviceRegisterRequest(BaseModel):
     device_name: str
     serial_number: str
     model: str
+    firmware_version: str
+
+class AssignFirmwareRequest(BaseModel):
+    serial_number: str
     firmware_version: str
 
 
@@ -85,3 +89,44 @@ def get_devices(db: Session = Depends(get_db)):
         }
         for device in devices
     ]
+
+@router.post("/assign-firmware")
+def assign_firmware(
+    request: AssignFirmwareRequest,
+    db: Session = Depends(get_db)
+):
+    device = (
+        db.query(Device)
+        .filter(Device.serial_number == request.serial_number)
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    firmware = (
+        db.query(Firmware)
+        .filter(Firmware.version == request.firmware_version)
+        .first()
+    )
+
+    if firmware is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Firmware not found"
+        )
+
+    device.assigned_firmware = firmware.version
+
+    db.commit()
+    db.refresh(device)
+
+    return {
+        "message": "Firmware assigned successfully",
+        "device_name": device.device_name,
+        "serial_number": device.serial_number,
+        "assigned_firmware": device.assigned_firmware
+    }
