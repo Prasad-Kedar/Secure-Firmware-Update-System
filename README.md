@@ -4,39 +4,47 @@ Enterprise-grade Secure Firmware Update System using FastAPI, React, SQLite, RSA
 
 ## Project Overview
 
-The Secure Firmware Update System is designed to provide a secure Over-the-Air (OTA) firmware update process for IoT and edge devices. It uses RSA digital signatures and SHA-256 hashing to verify the authenticity and integrity of firmware before installation. The project also integrates an automated CI/CD pipeline for secure firmware signing and edge-device verification to prevent unauthorized or tampered firmware updates.
+The Secure Firmware Update System provides a secure Over-the-Air (OTA) firmware update solution for IoT and edge devices. It uses RSA Digital Signatures and SHA-256 hashing to verify firmware authenticity and integrity before installation. The project also integrates an automated CI/CD pipeline for secure firmware signing and edge-device verification.
 
 ## Features
 
 - Secure Over-the-Air (OTA) firmware updates
-- RSA digital signature for firmware authentication
-- SHA-256 hash verification for integrity checking
-- Automated firmware signing using GitHub Actions
-- Edge device signature verification before installation
-- Detection of tampered or unauthorized firmware
-- Firmware version control to prevent rollback attacks
-- REST API support with Swagger documentation
-  
- ## Technology Stack
+- RSA digital signature verification
+- SHA-256 hash integrity validation
+- Automated firmware signing
+- Edge device verification
+- Firmware encryption
+- JWT-based authentication
+- Firmware version management
+- Secure deployment workflow
+- REST API with Swagger documentation
 
+## Technology Stack
+
+- **Backend:** FastAPI
+- **Frontend:** React
+- **Database:** SQLite, SQLAlchemy ORM
 - **Programming Language:** Python
-- **Framework:** FastAPI
-- **Cryptography:** RSA, SHA-256
-- **CI/CD:** GitHub Actions
+- **Cryptography:** RSA, SHA-256, AES (Fernet)
+- **Authentication:** JWT
 - **API Documentation:** Swagger UI
 - **Version Control:** Git & GitHub
 
 ## Database Design
 
 - SQLite
+
 - SQLAlchemy ORM
+
 - Firmware Table
+
 - Device Table
+
 - UpdateHistory Table
 
 ## Firmware Upload Module
 
-### Features
+ Features
 
 - Upload firmware packages
 - Store firmware files in uploads directory
