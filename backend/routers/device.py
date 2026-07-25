@@ -169,3 +169,31 @@ def update_device_status(
         "serial_number": device.serial_number,
         "status": device.status
     }
+
+@router.get("/{device_id}")
+def get_device_by_id(
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+    device = (
+        db.query(Device)
+        .filter(Device.id == device_id)
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    return {
+        "device_id": device.id,
+        "device_name": device.device_name,
+        "serial_number": device.serial_number,
+        "model": device.model,
+        "firmware_version": device.firmware_version,
+        "assigned_firmware": device.assigned_firmware,
+        "status": device.status,
+        "registered_at": device.registered_at
+    }
