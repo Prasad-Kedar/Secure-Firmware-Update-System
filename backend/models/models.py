@@ -33,7 +33,7 @@ class Device(Base):
 
     model = Column(String, nullable=False)
 
-    firmware_version = Column(String, nullable=False)
+    firmware_version = Column(String, nullable=True)
 
     assigned_firmware = Column(String, nullable=True)
 
