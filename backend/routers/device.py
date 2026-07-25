@@ -4,18 +4,13 @@ from pydantic import BaseModel
 
 from database.db import SessionLocal
 from models.models import Device, Firmware
+from schemas import DeviceCreate
 
 router = APIRouter(
     prefix="/devices",
     tags=["Device Management"]
 )
 
-
-class DeviceRegisterRequest(BaseModel):
-    device_name: str
-    serial_number: str
-    model: str
-    firmware_version: str
 
 class AssignFirmwareRequest(BaseModel):
     serial_number: str
@@ -24,7 +19,7 @@ class AssignFirmwareRequest(BaseModel):
 class DeviceStatusRequest(BaseModel):
     serial_number: str
     status: str
-    
+
 def get_db():
     db = SessionLocal()
     try:
@@ -35,7 +30,7 @@ def get_db():
 
 @router.post("/register")
 def register_device(
-    request: DeviceRegisterRequest,
+    request: DeviceCreate,
     db: Session = Depends(get_db)
 ):
     # Check duplicate serial number
