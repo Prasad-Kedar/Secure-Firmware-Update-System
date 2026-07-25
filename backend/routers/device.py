@@ -21,7 +21,10 @@ class AssignFirmwareRequest(BaseModel):
     serial_number: str
     firmware_version: str
 
-
+class DeviceStatusRequest(BaseModel):
+    serial_number: str
+    status: str
+    
 def get_db():
     db = SessionLocal()
     try:
@@ -129,4 +132,45 @@ def assign_firmware(
         "device_name": device.device_name,
         "serial_number": device.serial_number,
         "assigned_firmware": device.assigned_firmware
+    }
+
+@router.post("/update-status")
+def update_device_status(
+    request: DeviceStatusRequest,
+    db: Session = Depends(get_db)
+):
+    device = (
+        db.query(Device)
+        .filter(Device.serial_number == request.serial_number)
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    allowed_status = [
+        "Pending",
+        "Updating",
+        "Updated",
+        "Failed"
+    ]
+
+    if request.status not in allowed_status:
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid status"
+        )
+
+    device.status = request.status
+
+    db.commit()
+    db.refresh(device)
+
+    return {
+        "message": "Device status updated successfully",
+        "serial_number": device.serial_number,
+        "status": device.status
     }
