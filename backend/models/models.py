@@ -35,6 +35,9 @@ class Device(Base):
 
     firmware_version = Column(String, nullable=True)
 
+    firmware_version = Column(String, nullable=False)
+
+
     assigned_firmware = Column(String, nullable=True)
 
     status = Column(String, default="Pending")
