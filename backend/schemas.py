@@ -4,3 +4,10 @@ class DeviceCreate(BaseModel):
     device_name: str
     serial_number: str
     model: str
+
+
+class DeviceUpdate(BaseModel):
+    device_name: str
+    model: str
+    firmware_version: str
+    status: str

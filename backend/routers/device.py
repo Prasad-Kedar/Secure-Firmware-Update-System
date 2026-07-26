@@ -4,7 +4,7 @@ from pydantic import BaseModel
 
 from database.db import SessionLocal
 from models.models import Device, Firmware
-from schemas import DeviceCreate
+from schemas import DeviceCreate, DeviceUpdate
 
 router = APIRouter(
     prefix="/devices",
@@ -196,4 +196,44 @@ def get_device_by_id(
         "assigned_firmware": device.assigned_firmware,
         "status": device.status,
         "registered_at": device.registered_at
+    }
+
+@router.put("/{device_id}")
+def update_device(
+    device_id: int,
+    request: DeviceUpdate,
+    db: Session = Depends(get_db)
+):
+    device = (
+        db.query(Device)
+        .filter(Device.id == device_id)
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    device.device_name = request.device_name
+    device.model = request.model
+    device.firmware_version = request.firmware_version
+    device.status = request.status
+
+    db.commit()
+    db.refresh(device)
+
+    return {
+        "message": "Device updated successfully",
+        "device": {
+            "device_id": device.id,
+            "device_name": device.device_name,
+            "serial_number": device.serial_number,
+            "model": device.model,
+            "firmware_version": device.firmware_version,
+            "assigned_firmware": device.assigned_firmware,
+            "status": device.status,
+            "registered_at": device.registered_at
+        }
     }
