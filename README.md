@@ -29,6 +29,34 @@ The Secure Firmware Update System provides a secure Over-the-Air (OTA) firmware 
 - **Authentication:** JWT
 - **API Documentation:** Swagger UI
 - **Version Control:** Git & GitHub
+## Folder Structure
+
+```text
+Secure-Firmware-Update-System/
+├── backend/                 # FastAPI backend application
+├── frontend/                # React frontend application
+├── uploads/                 # Uploaded firmware files
+├── docs/                    # Project documentation
+├── README.md                # Project documentation
+└── .gitignore               # Git ignore rules
+```
+## Installation Guide
+
+### Prerequisites
+
+- Python 3.10 or later
+- Git
+- Node.js (for frontend)
+- SQLite
+
+### Installation
+
+1. Clone the repository.
+2. Navigate to the project directory.
+3. Install the required dependencies.
+4. Start the backend server.
+5. Start the frontend application.
+6. Open Swagger UI to test the APIs.
 
 ## Database Design
 
