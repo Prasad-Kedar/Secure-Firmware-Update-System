@@ -237,3 +237,28 @@ def update_device(
             "registered_at": device.registered_at
         }
     }
+
+@router.delete("/{device_id}")
+def delete_device(
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+    device = (
+        db.query(Device)
+        .filter(Device.id == device_id)
+        .first()
+    )
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    db.delete(device)
+    db.commit()
+
+    return {
+        "message": "Device deleted successfully",
+        "device_id": device_id
+    }
