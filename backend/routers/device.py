@@ -16,9 +16,11 @@ class AssignFirmwareRequest(BaseModel):
     serial_number: str
     firmware_version: str
 
+
 class DeviceStatusRequest(BaseModel):
     serial_number: str
     status: str
+
 
 def get_db():
     db = SessionLocal()
@@ -28,12 +30,14 @@ def get_db():
         db.close()
 
 
+# -----------------------------
+# Register Device
+# -----------------------------
 @router.post("/register")
 def register_device(
     request: DeviceCreate,
     db: Session = Depends(get_db)
 ):
-    # Check duplicate serial number
     existing_device = (
         db.query(Device)
         .filter(Device.serial_number == request.serial_number)
@@ -46,7 +50,6 @@ def register_device(
             detail="Device with this serial number already exists"
         )
 
-    # Create new device
     new_device = Device(
         device_name=request.device_name,
         serial_number=request.serial_number,
@@ -70,6 +73,10 @@ def register_device(
         "status": new_device.status
     }
 
+
+# -----------------------------
+# Get All Devices
+# -----------------------------
 @router.get("/")
 def get_devices(db: Session = Depends(get_db)):
     devices = db.query(Device).all()
@@ -88,16 +95,18 @@ def get_devices(db: Session = Depends(get_db)):
         for device in devices
     ]
 
+
+# -----------------------------
+# Assign Firmware
+# -----------------------------
 @router.post("/assign-firmware")
 def assign_firmware(
     request: AssignFirmwareRequest,
     db: Session = Depends(get_db)
 ):
-    device = (
-        db.query(Device)
-        .filter(Device.serial_number == request.serial_number)
-        .first()
-    )
+    device = db.query(Device).filter(
+        Device.serial_number == request.serial_number
+    ).first()
 
     if device is None:
         raise HTTPException(
@@ -105,11 +114,9 @@ def assign_firmware(
             detail="Device not found"
         )
 
-    firmware = (
-        db.query(Firmware)
-        .filter(Firmware.version == request.firmware_version)
-        .first()
-    )
+    firmware = db.query(Firmware).filter(
+        Firmware.version == request.firmware_version
+    ).first()
 
     if firmware is None:
         raise HTTPException(
@@ -129,16 +136,18 @@ def assign_firmware(
         "assigned_firmware": device.assigned_firmware
     }
 
+
+# -----------------------------
+# Update Device Status
+# -----------------------------
 @router.post("/update-status")
 def update_device_status(
     request: DeviceStatusRequest,
     db: Session = Depends(get_db)
 ):
-    device = (
-        db.query(Device)
-        .filter(Device.serial_number == request.serial_number)
-        .first()
-    )
+    device = db.query(Device).filter(
+        Device.serial_number == request.serial_number
+    ).first()
 
     if device is None:
         raise HTTPException(
@@ -170,16 +179,19 @@ def update_device_status(
         "status": device.status
     }
 
-@router.get("/{device_id}")
-def get_device_by_id(
-    device_id: int,
+
+# ====================================================
+# SEARCH ROUTES (हे ID routes च्या आधीच असले पाहिजेत)
+# ====================================================
+
+@router.get("/search/serial/{serial_number}")
+def search_device_by_serial(
+    serial_number: str,
     db: Session = Depends(get_db)
 ):
-    device = (
-        db.query(Device)
-        .filter(Device.id == device_id)
-        .first()
-    )
+    device = db.query(Device).filter(
+        Device.serial_number == serial_number
+    ).first()
 
     if device is None:
         raise HTTPException(
@@ -198,17 +210,71 @@ def get_device_by_id(
         "registered_at": device.registered_at
     }
 
+
+@router.get("/status/{status}")
+def get_devices_by_status(
+    status: str,
+    db: Session = Depends(get_db)
+):
+    devices = db.query(Device).filter(
+        Device.status == status
+    ).all()
+
+    return devices
+
+
+@router.get("/firmware/{version}")
+def get_devices_by_firmware(
+    version: str,
+    db: Session = Depends(get_db)
+):
+    devices = db.query(Device).filter(
+        Device.firmware_version == version
+    ).all()
+
+    return devices
+
+
+# ====================================================
+# CRUD BY ID (नेहमी शेवटी)
+# ====================================================
+
+@router.get("/{device_id}")
+def get_device_by_id(
+    device_id: int,
+    db: Session = Depends(get_db)
+):
+    device = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    return {
+        "device_id": device.id,
+        "device_name": device.device_name,
+        "serial_number": device.serial_number,
+        "model": device.model,
+        "firmware_version": device.firmware_version,
+        "assigned_firmware": device.assigned_firmware,
+        "status": device.status,
+        "registered_at": device.registered_at
+    }
+
+
 @router.put("/{device_id}")
 def update_device(
     device_id: int,
     request: DeviceUpdate,
     db: Session = Depends(get_db)
 ):
-    device = (
-        db.query(Device)
-        .filter(Device.id == device_id)
-        .first()
-    )
+    device = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
 
     if device is None:
         raise HTTPException(
@@ -238,16 +304,15 @@ def update_device(
         }
     }
 
+
 @router.delete("/{device_id}")
 def delete_device(
     device_id: int,
     db: Session = Depends(get_db)
 ):
-    device = (
-        db.query(Device)
-        .filter(Device.id == device_id)
-        .first()
-    )
+    device = db.query(Device).filter(
+        Device.id == device_id
+    ).first()
 
     if device is None:
         raise HTTPException(

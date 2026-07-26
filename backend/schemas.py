@@ -4,6 +4,7 @@ class DeviceCreate(BaseModel):
     device_name: str
     serial_number: str
     model: str
+    firmware_version: str
 
 
 class DeviceUpdate(BaseModel):
