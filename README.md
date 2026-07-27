@@ -58,6 +58,15 @@ Secure-Firmware-Update-System/
 5. Start the frontend application.
 6. Open Swagger UI to test the APIs.
 
+## Team Members
+
+| Name | Role |
+|------|------|
+| Prasad Kedar | Team Lead |
+| Al Ameen Ayoob | Developer |
+| Adarsh | Developer |
+| Nelna K Siyad | Documentation & Testing |
+
 ## Database Design
 
 - SQLite
