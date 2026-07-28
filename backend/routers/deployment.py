@@ -4,12 +4,16 @@ from sqlalchemy.orm import Session
 from database.db import SessionLocal
 from models.models import Device, Firmware, Deployment, UpdateHistory
 from schemas import DeploymentCreate
+from pydantic import BaseModel
+from datetime import datetime
 
 router = APIRouter(
     prefix="/deployment",
     tags=["Deployment"]
 )
 
+class RollbackRequest(BaseModel):
+    deployment_id: int
 
 def get_db():
     db = SessionLocal()
@@ -91,3 +95,47 @@ def deployment_history(
         }
         for deployment in deployments
     ]
+
+@router.post("/rollback")
+def rollback_deployment(
+    request: RollbackRequest,
+    db: Session = Depends(get_db)
+):
+
+    # Find Deployment
+    deployment = (
+        db.query(Deployment)
+        .filter(Deployment.id == request.deployment_id)
+        .first()
+    )
+
+    if deployment is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Deployment not found"
+        )
+
+    # Update Deployment
+    deployment.status = "Rolled Back"
+    deployment.rollback = True
+    deployment.rollback_time = datetime.utcnow()
+
+    db.commit()
+    db.refresh(deployment)
+
+    # Save Rollback History
+    history = UpdateHistory(
+        firmware_id=deployment.firmware_id,
+        device_id=deployment.device_id,
+        update_status="Rolled Back"
+    )
+
+    db.add(history)
+    db.commit()
+    db.refresh(history)
+
+    return {
+        "message": "Rollback completed successfully",
+        "deployment_id": deployment.id,
+        "status": deployment.status
+    }
