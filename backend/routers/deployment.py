@@ -1,0 +1,73 @@
+from fastapi import APIRouter, Depends, HTTPException
+from sqlalchemy.orm import Session
+
+from database.db import SessionLocal
+from models.models import Device, Firmware, Deployment, UpdateHistory
+from schemas import DeploymentCreate
+
+router = APIRouter(
+    prefix="/deployment",
+    tags=["Deployment"]
+)
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+
+@router.post("/deploy")
+def deploy_firmware(
+    request: DeploymentCreate,
+    db: Session = Depends(get_db)
+):
+    # Device Validation
+    device = db.query(Device).filter(
+        Device.id == request.device_id
+    ).first()
+
+    if device is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Device not found"
+        )
+
+    # Firmware Validation
+    firmware = db.query(Firmware).filter(
+        Firmware.id == request.firmware_id
+    ).first()
+
+    if firmware is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Firmware not found"
+        )
+
+    # Create Deployment
+    deployment = Deployment(
+        device_id=request.device_id,
+        firmware_id=request.firmware_id,
+        status="Started"
+    )
+
+    db.add(deployment)
+    db.commit()
+    db.refresh(deployment)
+
+    # Save Update History
+    history = UpdateHistory(
+        firmware_id=request.firmware_id,
+        device_id=request.device_id,
+        update_status="Started"
+    )
+
+    db.add(history)
+    db.commit()
+
+    return {
+        "deployment_id": deployment.id,
+        "status": "Deployment Started"
+    }
