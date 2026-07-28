@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import func
 
 from database.db import SessionLocal
-from models.models import Deployment
+from models.models import Deployment, Device
 
 router = APIRouter(
     prefix="/analytics",
@@ -47,3 +47,24 @@ def deployment_stats(
         "completed": completed,
         "failed": failed
     }
+
+@router.get("/firmware-distribution")
+def firmware_distribution(
+    db: Session = Depends(get_db)
+):
+    data = (
+        db.query(
+            Device.firmware_version,
+            func.count(Device.id)
+        )
+        .group_by(Device.firmware_version)
+        .all()
+    )
+
+    return [
+        {
+            "version": version,
+            "devices": count
+        }
+        for version, count in data
+    ]
