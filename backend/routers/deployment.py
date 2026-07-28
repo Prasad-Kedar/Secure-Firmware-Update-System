@@ -71,3 +71,23 @@ def deploy_firmware(
         "deployment_id": deployment.id,
         "status": "Deployment Started"
     }
+
+@router.get("/history")
+def deployment_history(
+    db: Session = Depends(get_db)
+):
+    deployments = db.query(Deployment).all()
+
+    return [
+        {
+            "deployment_id": deployment.id,
+            "device_id": deployment.device_id,
+            "firmware_id": deployment.firmware_id,
+            "status": deployment.status,
+            "started_at": deployment.started_at,
+            "completed_at": deployment.completed_at,
+            "rollback": deployment.rollback,
+            "rollback_time": deployment.rollback_time
+        }
+        for deployment in deployments
+    ]
