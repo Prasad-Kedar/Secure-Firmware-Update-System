@@ -7,6 +7,7 @@ from models.models import Firmware, Device
 from routers.firmware import router as firmware_router
 from utils.auth_utils import create_access_token, verify_token
 from routers.device import router as device_router
+from routers.analytics import router as analytics_router
 
 app = FastAPI(
     title="Secure Firmware Update System"
@@ -18,6 +19,7 @@ Base.metadata.create_all(bind=engine)
 
 app.include_router(firmware_router)
 app.include_router(device_router)
+app.include_router(analytics_router)
 
 
 @app.get("/")
