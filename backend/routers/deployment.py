@@ -139,3 +139,68 @@ def rollback_deployment(
         "deployment_id": deployment.id,
         "status": deployment.status
     }
+
+@router.get("/status")
+def deployment_status(
+    db: Session = Depends(get_db)
+):
+
+    total = db.query(Deployment).count()
+
+    started = (
+        db.query(Deployment)
+        .filter(Deployment.status == "Started")
+        .count()
+    )
+
+    completed = (
+        db.query(Deployment)
+        .filter(Deployment.status == "Completed")
+        .count()
+    )
+
+    failed = (
+        db.query(Deployment)
+        .filter(Deployment.status == "Failed")
+        .count()
+    )
+
+    rollback = (
+        db.query(Deployment)
+        .filter(Deployment.status == "Rolled Back")
+        .count()
+    )
+
+    return {
+        "total_deployments": total,
+        "started": started,
+        "completed": completed,
+        "failed": failed,
+        "rolled_back": rollback
+    }
+
+@router.get("/status/{status}")
+def deployment_by_status(
+    status: str,
+    db: Session = Depends(get_db)
+):
+
+    deployments = (
+        db.query(Deployment)
+        .filter(Deployment.status == status)
+        .all()
+    )
+
+    return [
+        {
+            "deployment_id": deployment.id,
+            "device_id": deployment.device_id,
+            "firmware_id": deployment.firmware_id,
+            "status": deployment.status,
+            "started_at": deployment.started_at,
+            "completed_at": deployment.completed_at,
+            "rollback": deployment.rollback,
+            "rollback_time": deployment.rollback_time
+        }
+        for deployment in deployments
+    ]
