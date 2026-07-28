@@ -81,14 +81,13 @@ Secure-Firmware-Update-System/
 
 ## Firmware Upload Module
 
- Features
+ ###Features
 
 - Upload firmware packages
 - Store firmware files in uploads directory
 - Save firmware metadata to SQLite
 - Validate upload requests
 - Test APIs using Swagger UIgit add README.md
-
 
 ## Firmware Integrity Verification
 
@@ -327,7 +326,6 @@ Return Success
 - POST /devices/update-status
 
 ### Device Status
-
 - Pending
 - Updating
 - Updated
