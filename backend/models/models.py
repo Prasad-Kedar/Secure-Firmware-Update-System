@@ -61,6 +61,7 @@ class Deployment(Base):
 
     rollback = Column(Boolean, default=False)
 
+
     rollback_time = Column(DateTime, nullable=True)    
 
 
@@ -80,3 +81,6 @@ class AuditLog(Base):
     performed_by = Column(String)
 
     timestamp = Column(DateTime, default=datetime.utcnow)    
+
+    rollback_time = Column(DateTime, nullable=True)    
+
