@@ -6,6 +6,7 @@ from models.models import Device, Firmware, Deployment, UpdateHistory
 from schemas import DeploymentCreate
 from pydantic import BaseModel
 from datetime import datetime
+from utils.audit_logger import log_audit
 
 router = APIRouter(
     prefix="/deployment",
@@ -70,6 +71,15 @@ def deploy_firmware(
 
     db.add(history)
     db.commit()
+
+    # Audit Logging
+    log_audit(
+        action="Firmware Deployment",
+        firmware_name=firmware.firmware_name,
+        version=firmware.version,
+        device_name=device.device_name,
+        performed_by="admin"
+    )
 
     return {
         "deployment_id": deployment.id,
