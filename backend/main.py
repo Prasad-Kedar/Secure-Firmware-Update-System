@@ -11,6 +11,8 @@ from routers.deployment import router as deployment_router
 from routers.analytics import router as analytics_router
 from utils.audit_logger import log_audit
 from logging_config import logger
+from datetime import datetime
+from sqlalchemy import text
 
 app = FastAPI(
     title="Secure Firmware Update System"
@@ -162,3 +164,33 @@ def delete_firmware(
         "message": f"Firmware {firmware_id} deleted by admin",
         "admin": admin.get("sub")
     }
+
+@app.get("/health")
+def health():
+
+    try:
+
+        with engine.connect() as connection:
+            connection.execute(text("SELECT 1"))
+
+        logger.info("Health check executed successfully")
+
+        return {
+            "status": "healthy",
+            "database": "connected",
+            "version": "1.0.0",
+            "timestamp": datetime.utcnow().isoformat()
+        }
+
+    except Exception as e:
+
+        logger.exception("Health check failed")
+
+        raise HTTPException(
+            status_code=500,
+            detail={
+                "status": "unhealthy",
+                "database": "disconnected",
+                "error": str(e)
+            }
+        )
