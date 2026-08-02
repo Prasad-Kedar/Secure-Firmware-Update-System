@@ -12,11 +12,11 @@ from routers.analytics import router as analytics_router
 from utils.audit_logger import log_audit
 from logging_config import logger
 
-app = FastAPI()
-
-logger.info(
-    "SOAR Incident Containment Engine Started"
+app = FastAPI(
+    title="Secure Firmware Update System"
 )
+
+logger.info("Secure Firmware Update System started successfully.")
 
 security = HTTPBearer()
 
