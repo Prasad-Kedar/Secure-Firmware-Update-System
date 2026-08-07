@@ -20,12 +20,7 @@ def test_deployment_history(client):
 
 def test_invalid_rollback(client):
 
-    response = client.post(
-        "/deployment/rollback",
-        json={
-            "deployment_id": 999999
-        }
-    )
+    response = client.post("/deployment/rollback", json={"deployment_id": 999999})
 
     assert response.status_code == 404
 
@@ -33,11 +28,7 @@ def test_invalid_rollback(client):
 def test_invalid_deployment(client):
 
     response = client.post(
-        "/deployment/deploy",
-        json={
-            "device_id": 999999,
-            "firmware_id": 999999
-        }
+        "/deployment/deploy", json={"device_id": 999999, "firmware_id": 999999}
     )
 
     assert response.status_code == 404
