@@ -169,7 +169,6 @@ def delete_firmware(firmware_id: int, admin=Depends(require_admin)):
 
 @app.get("/health")
 def health():
-
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))
@@ -184,10 +183,13 @@ def health():
         }
 
     except Exception as e:
-
         logger.exception("Health check failed")
 
         raise HTTPException(
             status_code=500,
-            detail={"status": "unhealthy", "database": "disconnected", "error": str(e)},
+            detail={
+                "status": "unhealthy",
+                "database": "disconnected",
+                "error": str(e),
+            },
         )
