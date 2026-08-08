@@ -3,7 +3,7 @@ def test_login_success(client):
         "/login",
         json={
             "username": "admin",
-            "password": "admin123",
+            "password": "admin123",  # nosec B105
         },
     )
 
