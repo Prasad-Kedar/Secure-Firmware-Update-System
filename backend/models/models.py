@@ -44,6 +44,7 @@ class UpdateHistory(Base):
     update_status = Column(String, nullable=False)
     updated_at = Column(DateTime, default=datetime.utcnow)
 
+
 class Deployment(Base):
     __tablename__ = "deployment"
 
@@ -61,4 +62,24 @@ class Deployment(Base):
 
     rollback = Column(Boolean, default=False)
 
-    rollback_time = Column(DateTime, nullable=True)    
+    rollback_time = Column(DateTime, nullable=True)
+
+
+class AuditLog(Base):
+    __tablename__ = "audit_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+
+    action = Column(String, nullable=False)
+
+    firmware_name = Column(String)
+
+    version = Column(String)
+
+    device_name = Column(String)
+
+    performed_by = Column(String)
+
+    timestamp = Column(DateTime, default=datetime.utcnow)
+
+    rollback_time = Column(DateTime, nullable=True)

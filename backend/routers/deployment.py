@@ -1,19 +1,19 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+from datetime import datetime
 
 from database.db import SessionLocal
 from models.models import Device, Firmware, Deployment, UpdateHistory
 from schemas import DeploymentCreate
-from pydantic import BaseModel
-from datetime import datetime
+from utils.audit_logger import log_audit
 
-router = APIRouter(
-    prefix="/deployment",
-    tags=["Deployment"]
-)
+router = APIRouter(prefix="/deployment", tags=["Deployment"])
+
 
 class RollbackRequest(BaseModel):
     deployment_id: int
+
 
 def get_db():
     db = SessionLocal()
@@ -24,37 +24,23 @@ def get_db():
 
 
 @router.post("/deploy")
-def deploy_firmware(
-    request: DeploymentCreate,
-    db: Session = Depends(get_db)
-):
+def deploy_firmware(request: DeploymentCreate, db: Session = Depends(get_db)):
+
     # Device Validation
-    device = db.query(Device).filter(
-        Device.id == request.device_id
-    ).first()
+    device = db.query(Device).filter(Device.id == request.device_id).first()
 
     if device is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Device not found"
-        )
+        raise HTTPException(status_code=404, detail="Device not found")
 
     # Firmware Validation
-    firmware = db.query(Firmware).filter(
-        Firmware.id == request.firmware_id
-    ).first()
+    firmware = db.query(Firmware).filter(Firmware.id == request.firmware_id).first()
 
     if firmware is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Firmware not found"
-        )
+        raise HTTPException(status_code=404, detail="Firmware not found")
 
     # Create Deployment
     deployment = Deployment(
-        device_id=request.device_id,
-        firmware_id=request.firmware_id,
-        status="Started"
+        device_id=request.device_id, firmware_id=request.firmware_id, status="Started"
     )
 
     db.add(deployment)
@@ -65,21 +51,28 @@ def deploy_firmware(
     history = UpdateHistory(
         firmware_id=request.firmware_id,
         device_id=request.device_id,
-        update_status="Started"
+        update_status="Started",
     )
 
     db.add(history)
     db.commit()
+    db.refresh(history)
 
-    return {
-        "deployment_id": deployment.id,
-        "status": "Deployment Started"
-    }
+    # Audit Logging
+    log_audit(
+        action="Firmware Deployment",
+        firmware_name=firmware.firmware_name,
+        version=firmware.version,
+        device_name=device.device_name,
+        performed_by="admin",
+    )
+
+    return {"deployment_id": deployment.id, "status": "Deployment Started"}
+
 
 @router.get("/history")
-def deployment_history(
-    db: Session = Depends(get_db)
-):
+def deployment_history(db: Session = Depends(get_db)):
+
     deployments = db.query(Deployment).all()
 
     return [
@@ -91,31 +84,68 @@ def deployment_history(
             "started_at": deployment.started_at,
             "completed_at": deployment.completed_at,
             "rollback": deployment.rollback,
-            "rollback_time": deployment.rollback_time
+            "rollback_time": deployment.rollback_time,
         }
         for deployment in deployments
     ]
 
+
+@router.get("/status")
+def deployment_status(db: Session = Depends(get_db)):
+
+    total = db.query(Deployment).count()
+
+    started = db.query(Deployment).filter(Deployment.status == "Started").count()
+
+    completed = db.query(Deployment).filter(Deployment.status == "Completed").count()
+
+    failed = db.query(Deployment).filter(Deployment.status == "Failed").count()
+
+    rolled_back = (
+        db.query(Deployment).filter(Deployment.status == "Rolled Back").count()
+    )
+
+    return {
+        "total_deployments": total,
+        "started": started,
+        "completed": completed,
+        "failed": failed,
+        "rolled_back": rolled_back,
+    }
+
+
+@router.get("/status/{status}")
+def deployment_by_status(status: str, db: Session = Depends(get_db)):
+
+    deployments = db.query(Deployment).filter(Deployment.status == status).all()
+
+    return [
+        {
+            "deployment_id": deployment.id,
+            "device_id": deployment.device_id,
+            "firmware_id": deployment.firmware_id,
+            "status": deployment.status,
+            "started_at": deployment.started_at,
+            "completed_at": deployment.completed_at,
+            "rollback": deployment.rollback,
+            "rollback_time": deployment.rollback_time,
+        }
+        for deployment in deployments
+    ]
+
+
 @router.post("/rollback")
-def rollback_deployment(
-    request: RollbackRequest,
-    db: Session = Depends(get_db)
-):
+def rollback_deployment(request: RollbackRequest, db: Session = Depends(get_db)):
 
     # Find Deployment
     deployment = (
-        db.query(Deployment)
-        .filter(Deployment.id == request.deployment_id)
-        .first()
+        db.query(Deployment).filter(Deployment.id == request.deployment_id).first()
     )
 
     if deployment is None:
-        raise HTTPException(
-            status_code=404,
-            detail="Deployment not found"
-        )
+        raise HTTPException(status_code=404, detail="Deployment not found")
 
-    # Update Deployment
+    # Update Deployment Status
     deployment.status = "Rolled Back"
     deployment.rollback = True
     deployment.rollback_time = datetime.utcnow()
@@ -127,80 +157,32 @@ def rollback_deployment(
     history = UpdateHistory(
         firmware_id=deployment.firmware_id,
         device_id=deployment.device_id,
-        update_status="Rolled Back"
+        update_status="Rolled Back",
     )
 
     db.add(history)
     db.commit()
     db.refresh(history)
 
+    # Get Device Details
+    device = db.query(Device).filter(Device.id == deployment.device_id).first()
+
+    # Get Firmware Details
+    firmware = db.query(Firmware).filter(Firmware.id == deployment.firmware_id).first()
+
+    # Audit Logging
+    log_audit(
+        action="Firmware Rollback",
+        firmware_name=firmware.firmware_name,
+        version=firmware.version,
+        device_name=device.device_name,
+        performed_by="admin",
+    )
+
     return {
         "message": "Rollback completed successfully",
         "deployment_id": deployment.id,
-        "status": deployment.status
+        "status": deployment.status,
+        "rollback": deployment.rollback,
+        "rollback_time": deployment.rollback_time,
     }
-
-@router.get("/status")
-def deployment_status(
-    db: Session = Depends(get_db)
-):
-
-    total = db.query(Deployment).count()
-
-    started = (
-        db.query(Deployment)
-        .filter(Deployment.status == "Started")
-        .count()
-    )
-
-    completed = (
-        db.query(Deployment)
-        .filter(Deployment.status == "Completed")
-        .count()
-    )
-
-    failed = (
-        db.query(Deployment)
-        .filter(Deployment.status == "Failed")
-        .count()
-    )
-
-    rollback = (
-        db.query(Deployment)
-        .filter(Deployment.status == "Rolled Back")
-        .count()
-    )
-
-    return {
-        "total_deployments": total,
-        "started": started,
-        "completed": completed,
-        "failed": failed,
-        "rolled_back": rollback
-    }
-
-@router.get("/status/{status}")
-def deployment_by_status(
-    status: str,
-    db: Session = Depends(get_db)
-):
-
-    deployments = (
-        db.query(Deployment)
-        .filter(Deployment.status == status)
-        .all()
-    )
-
-    return [
-        {
-            "deployment_id": deployment.id,
-            "device_id": deployment.device_id,
-            "firmware_id": deployment.firmware_id,
-            "status": deployment.status,
-            "started_at": deployment.started_at,
-            "completed_at": deployment.completed_at,
-            "rollback": deployment.rollback,
-            "rollback_time": deployment.rollback_time
-        }
-        for deployment in deployments
-    ]
