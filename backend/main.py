@@ -1,5 +1,8 @@
 from fastapi import FastAPI, HTTPException, Depends, Request
 from starlette.middleware.base import BaseHTTPMiddleware
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -28,12 +31,20 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["Content-Security-Policy"] = "default-src 'self'"
 
         return response
+limiter = Limiter(key_func=get_remote_address)
 
 app = FastAPI(title="Secure Firmware Update System")
 
+app.state.limiter = limiter
+app.add_exception_handler(
+    RateLimitExceeded,
+    _rate_limit_exceeded_handler,
+)
+
 app.add_middleware(SecurityHeadersMiddleware)
 
 app.add_middleware(SecurityHeadersMiddleware)
+
 
 logger.info("Secure Firmware Update System started successfully.")
 
@@ -116,26 +127,31 @@ fake_users = {
 
 
 @app.post("/login")
-def login(request: LoginRequest):
+@limiter.limit("5/minute")
+def login(request: Request, credentials: LoginRequest):
 
-    user = fake_users.get(request.username)
+    user = fake_users.get(credentials.username)
 
     # Failed Login Audit
-    if not user or user["password"] != request.password:
+    if not user or user["password"] != credentials.password:
 
-        logger.warning(f"Failed login attempt for user: {request.username}")
+        logger.warning(f"Failed login attempt for user: {credentials.username}")
 
         log_audit(
             action="Login Failed",
             firmware_name=None,
             version=None,
             device_name=None,
-            performed_by=request.username,
+            performed_by=credentials.username,
         )
 
         raise HTTPException(status_code=401, detail="Invalid username or password")
 
-    token = create_access_token({"sub": user["username"], "role": user["role"]})
+    token = create_access_token({
+        "sub": user["username"],
+        "role": user["role"]
+    })
+
     logger.info(f"User '{user['username']}' logged in successfully")
 
     # Successful Login Audit
@@ -147,10 +163,9 @@ def login(request: LoginRequest):
         performed_by=user["username"],
     )
 
-
     return {
         "access_token": token,
-        "token_type": "bearer",  # nosec B105
+        "token_type": "bearer",
         "role": user["role"],
     }
 
