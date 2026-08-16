@@ -1,4 +1,5 @@
 from fastapi import FastAPI, HTTPException, Depends, Request
+from starlette.middleware.base import BaseHTTPMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.responses import JSONResponse
 from fastapi.exceptions import RequestValidationError
@@ -17,7 +18,22 @@ from logging_config import logger
 from datetime import datetime
 from sqlalchemy import text
 
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request: Request, call_next):
+        response = await call_next(request)
+
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+        return response
+
 app = FastAPI(title="Secure Firmware Update System")
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+app.add_middleware(SecurityHeadersMiddleware)
 
 logger.info("Secure Firmware Update System started successfully.")
 
