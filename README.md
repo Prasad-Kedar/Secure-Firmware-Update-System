@@ -409,9 +409,13 @@ Capabilities:
 
 Register devices
 
+
 List devices
 
 Update device details
+
+# Secure Firmware Update System
+
 
 Delete devices
 
@@ -705,6 +709,7 @@ Expected:
 
 StatusCode : 200
 
+
 Then open:
 
 http://127.0.0.1:8001/docs
@@ -814,7 +819,7 @@ Al Ameen Ayoob
 
 Frontend / Development
 
-Adarsh
+Prasad kedar
 
 Development / Testing
 
@@ -897,3 +902,6 @@ Before production deployment, environment-specific secrets, cryptographic key ma
 Never commit passwords, JWT secrets, private RSA keys, AES/Fernet keys, production .env files, sensitive databases, or temporary security artifacts to Git.
 
 If a secret has ever been exposed in Git history, rotate/revoke it and treat the old secret as compromised.
+
+The workflow runs automatically on every push and pull request to ensure code quality and application stability.
+

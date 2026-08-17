@@ -41,6 +41,9 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         else:
             response.headers["Content-Security-Policy"] = "default-src 'self'"
 
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+
         return response
 limiter = Limiter(key_func=get_remote_address)
 
