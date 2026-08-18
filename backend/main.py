@@ -28,6 +28,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
         response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+
         response.headers["Content-Security-Policy"] = (
             "default-src 'self'; "
             "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
@@ -35,6 +36,23 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             "img-src 'self' data: https://fastapi.tiangolo.com; "
             "font-src 'self' data:;"
         )
+
+
+        if request.url.path.startswith("/docs"):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'self'; "
+                "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+                "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+                "img-src 'self' data: https://fastapi.tiangolo.com; "
+                "font-src 'self' data:; "
+                "connect-src 'self' https://cdn.jsdelivr.net;"
+            )
+        else:
+            response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+        response.headers["Content-Security-Policy"] = "default-src 'self'"
+
+
 
         return response
 limiter = Limiter(key_func=get_remote_address)
