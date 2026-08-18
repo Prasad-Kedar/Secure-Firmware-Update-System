@@ -47,6 +47,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         )
 
         # Swagger UI requires external JS/CSS/image resources.
+
+        response.headers["Content-Security-Policy"] = (
+            "default-src 'self'; "
+            "script-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+            "style-src 'self' https://cdn.jsdelivr.net 'unsafe-inline'; "
+            "img-src 'self' data: https://fastapi.tiangolo.com; "
+            "font-src 'self' data:;"
+        )
+
+
+
         if request.url.path.startswith("/docs"):
 
             response.headers["Content-Security-Policy"] = (
@@ -63,6 +74,7 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
             response.headers["Content-Security-Policy"] = (
                 "default-src 'self'"
             )
+
 
         return response
 
